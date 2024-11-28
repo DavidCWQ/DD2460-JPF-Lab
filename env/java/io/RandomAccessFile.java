@@ -20,6 +20,8 @@ public class RandomAccessFile {
 	}
 
 	public void close() throws IOException {
+		// Fix(#2): Insert an extra assertion to ensure the file is not closed twice.
+    	assert (!isClosed) : "ERROR: File is already closed!";
 		isClosed = true;
 	}
 
