@@ -1,0 +1,69 @@
+--- ../backup/Downloader.old.java	2024-11-28 10:46:22.742440300 +0100
++++ Downloader.java	2024-11-28 11:24:03.753980100 +0100
+@@ -35,6 +35,7 @@
+ 	public void die(String msg, Exception e) {
+ 		System.err.println(msg + ": " + e);
+ 		e.printStackTrace();
++		assert(false);
+ 		System.exit(1);
+ 	}
+ 
+@@ -121,13 +122,20 @@
+ 	}
+ 
+ 	public void launchDL(int length) {
+-		if (downloaders > length) {
+-			downloaders = length;
+-		}
++
++		// Fix(#1): the data race here by create a local copy. [STEP 2]
++		int localDownloaders; // Local copy to avoid data race
++		synchronized (output) { 
++			if (downloaders > length) {
++				downloaders = length;
++			}
++        	localDownloaders = downloaders; // Copy the shared value to a local variable
++    	}
++
+ 		int end = length;
+-		int chunkSize = length / (downloaders + 1);
++		int chunkSize = length / (localDownloaders + 1); // downloaders -> localDownloaders
+ 		int start = 0;
+-		for (int i = 0; i < downloaders; i++) {
++		for (int i = 0; i < localDownloaders; i++) { // downloaders -> localDownloaders
+ 			start = end - chunkSize;
+ 			new Downloader(start, end).start();
+ 			end = end - chunkSize;
+@@ -139,17 +147,18 @@
+ 		System.out.println("Worker: Download from " + start + " to " + end);
+ 		connect();
+ 		getData(is, start, end, false);
+-		downloaders--;
+-		if (downloaders == 0) { // workers finished
+-			System.out.println("Workers finished.");
+-			synchronized (output) {
++		// Fix(#1): the data race here by extending the scope of lock(output). [STEP 1]
++		synchronized (output) {
++			downloaders--;
++			if (downloaders == 0) { // workers finished
++				System.out.println("Workers finished.");
+ 				if (firstChunkOK && !main_finished) {
+ 					try {
+ 						output.close();
+ 					} catch (IOException e) {
+ 						die("Error closing file", e);
+ 					}
+-				}
++				}	
+ 			}
+ 		}
+ 	}
+@@ -194,7 +203,7 @@
+ 					toRead = end - pos;
+ 				}
+ 				r = is.read(buffer, 0, toRead);
+-				// TODO: check if already d/l'ed
++				// TODO: check if already d/l'ed (downloaded?)
+ 				if (r != -1) {
+ 					synchronized (output) {
+ 						if (main_finished ||
