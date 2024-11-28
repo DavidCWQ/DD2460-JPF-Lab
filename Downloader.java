@@ -69,6 +69,8 @@ public class Downloader extends Thread {
 		try {
 			synchronized (output) {
 				output.close();
+				// Fix(#3): call oracle function in state
+				RandomAccessFile.oracle(new File(outputFileName));
 			}
 		} catch (IOException e) {
 			die("Error closing file", e);
@@ -155,6 +157,8 @@ public class Downloader extends Thread {
 				if (firstChunkOK && !main_finished) {
 					try {
 						output.close();
+						// Fix(#3): call oracle function in state
+						RandomAccessFile.oracle(new File(outputFileName));
 					} catch (IOException e) {
 						die("Error closing file", e);
 					}
@@ -234,6 +238,8 @@ public class Downloader extends Thread {
 			synchronized (output) {
 				output.seek(pos);
 				output.write(buffer, 0, len);
+				// Fix(#3): call oracle function in state
+				RandomAccessFile.oracle(new File(outputFileName));
 			}
 		} catch (IOException e) {
 			die ("Cannot write to file", e);

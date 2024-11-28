@@ -61,4 +61,24 @@ public class RandomAccessFile {
 			throw new IOException("Simulated disk full");
 		}
 	}
+
+	// Fix(#3): a function oracle to check file contents
+    public static void oracle(File f) throws IOException {
+
+        RandomAccessFile file = new RandomAccessFile(f, "r"); // read-only mode
+        // assert (file.length() == 3) : "ERROR: File length is not 3!";
+
+        byte[] buffer = new byte[3];
+        int bytesRead = file.read(buffer, 0, 3);
+
+        // Assert all bytes are read
+        assert (bytesRead == 3) : "ERROR: Unable to read 3 bytes from file!";
+
+        // Assert the content matches expected 'a', 'b', 'c'
+        assert (buffer[0] == 'a') : "ERROR: 1st byte is not 'a'!";
+        assert (buffer[1] == 'b') : "ERROR: 2nd byte is not 'b'!";
+        assert (buffer[2] == 'c') : "ERROR: 3rd byte is not 'c'!";
+
+        file.close();
+    }
 }
